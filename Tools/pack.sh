@@ -10,6 +10,9 @@ TEMP_PATH="${SRCROOT}/${TARGET_NAME}/tmp"
 # monkeyparser
 MONKEYPARSER="${MONKEYDEV_PATH}/bin/monkeyparser"
 
+# insert_dylib
+INSERT_DYLIB="${MONKEYDEV_PATH}/bin/insert_dylib"
+
 # create ipa script
 CREATE_IPA="${MONKEYDEV_PATH}/bin/createIPA.command"
 
@@ -176,9 +179,12 @@ function pack(){
 	APP_BINARY=`plutil -convert xml1 -o - ${BUILD_APP_PATH}/Info.plist | grep -A1 Exec | tail -n1 | cut -f2 -d\> | cut -f1 -d\<`
 
 	if [[ ${MONKEYDEV_INSERT_DYLIB} == "YES" ]];then
-		"$MONKEYPARSER" install -c load -p "@executable_path/Frameworks/lib""${TARGET_NAME}""Dylib.dylib" -t "${BUILD_APP_PATH}/${APP_BINARY}"
+		if [[ ${MONKEYDEV_INSERT_DYLIB_TOOLS} == "INSERT_DYLIB" ]];then
+			"$INSERT_DYLIB" --inplace --overwrite --all-yes "@executable_path/Frameworks/lib${TARGET_NAME}Dylib.dylib" "${BUILD_APP_PATH}/${APP_BINARY}"
+		else
+			"$MONKEYPARSER" install -c load -p "@executable_path/Frameworks/lib${TARGET_NAME}Dylib.dylib" -t "${BUILD_APP_PATH}/${APP_BINARY}"
+		fi
 		"$MONKEYPARSER" unrestrict -t "${BUILD_APP_PATH}/${APP_BINARY}"
-
 		chmod +x "${BUILD_APP_PATH}/${APP_BINARY}"
 	fi
 
