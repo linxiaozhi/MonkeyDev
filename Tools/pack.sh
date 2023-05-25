@@ -1,3 +1,7 @@
+#!/bin/bash
+
+export PATH=~/miniconda/bin:/opt/homebrew/bin:/opt/MonkeyDev/bin:$MonkeyDevTheosPath/bin:/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH
+
 MONKEYDEV_PATH="/opt/MonkeyDev"
 
 # temp path
