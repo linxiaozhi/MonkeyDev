@@ -34,6 +34,24 @@ MONKEYDEV_TARGET_APP=${MONKEYDEV_TARGET_APP:=Optional}
 MONKEYDEV_ADD_SUBSTRATE=${MONKEYDEV_ADD_SUBSTRATE:=YES}
 MONKEYDEV_DEFAULT_BUNDLEID=${MONKEYDEV_DEFAULT_BUNDLEID:=NO}
 
+#默认SSH设备IP
+export DefaultDeviceIP="localhost"
+#默认SSH端口号
+export DefaultDevicePort="2222"
+#默认SSH用户名
+export DefaultDeviceUser="root"
+#默认SSH密码
+export DefaultDevicePassword="alpine"
+#默认SSH证书
+export DefaultDeviceIdentityFile=""
+#默认Frida host
+export DefaultDeviceFridaHost="localhost:27042"
+
+export userName="${SUDO_USER-$USER}"
+export userGroup=`id -g $userName`
+export userHome=`eval echo ~$userName`
+export bashProfileFiles=("$userHome/.zshrc" "$userHome/.bash_profile" "$userHome/.bashrc" "$userHome/.bash_login" "$userHome/.profile")
+
 function isRelease() {
 	if [[ "${CONFIGURATION}" = "Release" ]]; then
 		true
@@ -51,6 +69,67 @@ function panic() { # args: exitCode, message...
 		echo "$@" >&2
 
 	exit ${exitCode}
+}
+
+function determineBashProfileFile()
+{
+	local f
+	local filePath
+	
+	for f in "${bashProfileFiles[@]}"; do
+		if [[ -f "$f" ]]; then
+            if [[ -n `perl -ne 'print $1 if /^(?:export)? *'"MonkeyDevPath"'=(.*)$/' "$f"` ]]; then
+    			filePath="$f"
+    			break
+            fi
+		fi
+	done
+	
+	if [[ $filePath == "" ]]; then
+
+		filePath="$bashProfileFiles" # use first array item
+		
+		touch "$filePath" || \
+			panic $? "Failed to touch $filePath"
+			
+		changeOwn "$userName:$userGroup" "$filePath"
+		changeMode 0600 "$filePath"
+	fi
+	
+	# return #
+	echo "$filePath"
+}
+
+function getBashProfileEnvVarValue() # args: envVarName
+{
+	local envVarName="$1"
+	local perlValue
+	local bashProfileFile
+	
+	bashProfileFile=`determineBashProfileFile`
+	
+	perlValue=`perl -ne 'print $1 if /^(?:export)? *'"$envVarName"'=(.*)$/' "$bashProfileFile"` || \
+		panic $? "Failed to perl"
+	
+	# return #
+	echo "$perlValue"
+}
+
+function requireExportedVariable() # args: envVarName[, message]
+{
+	local envVarName="$1"
+	local message="$2"
+	local value
+	
+	if [[ ${!envVarName} == "" ]]; then
+		value=`getBashProfileEnvVarValue "$envVarName"`
+	
+		[[ $value != "" ]] || \
+			panic 1 "Environment variable $envVarName is not set or is empty"
+
+		eval $envVarName='$value'
+		export $envVarName
+	fi
 }
 
 function checkApp(){
@@ -94,7 +173,46 @@ function pack(){
 
 	if [[ ! ${TARGET_APP_PATH} ]] && [[ ! ${TARGET_IPA_PATH} ]] && [[ ${MONKEYDEV_TARGET_APP} != "Optional" ]]; then
 		echo "pulling decrypted ipa from jailbreak device......."
-		PYTHONIOENCODING=utf-8 ${MONKEYDEV_PATH}/bin/dump.py ${MONKEYDEV_TARGET_APP} -o "${TARGET_APP_PUT_PATH}/TargetApp.ipa" || panic 1 "dump.py error"
+
+		#如果编译设置里面MonkeyDevDeviceIP为空的话，就从用户的profile里面去拿，否则使用默认值
+		[[ $MonkeyDevDeviceIP != "" ]] || \
+			MonkeyDevDeviceIP=`getBashProfileEnvVarValue "MonkeyDevDeviceIP"`
+		[[ $MonkeyDevDeviceIP != "" ]] || \
+			MonkeyDevDeviceIP="$DefaultDeviceIP"
+
+		#如果编译设置里面MonkeyDevDevicePort为空的话，就从用户的profile里面去拿，否则使用默认值
+		[[ $MonkeyDevDevicePort != "" ]] || \
+			MonkeyDevDevicePort=`getBashProfileEnvVarValue "MonkeyDevDevicePort"`
+		[[ $MonkeyDevDevicePort != "" ]] || \
+			MonkeyDevDevicePort="$DefaultDevicePort"
+
+		#如果编译设置里面MonkeyDevDeviceUser为空的话，就从用户的profile里面去拿，否则使用默认值
+		[[ $MonkeyDevDeviceUser != "" ]] || \
+			MonkeyDevDeviceUser=`getBashProfileEnvVarValue "MonkeyDevDeviceUser"`
+		[[ $MonkeyDevDeviceUser != "" ]] || \
+			MonkeyDevDeviceUser="$DefaultDeviceUser"
+
+		#如果编译设置里面MonkeyDevDevicePassword为空的话，就从用户的profile里面去拿，否则使用默认值
+		[[ $MonkeyDevDevicePassword != "" ]] || \
+			MonkeyDevDevicePassword=`getBashProfileEnvVarValue "MonkeyDevDevicePassword"`
+		[[ $MonkeyDevDevicePassword != "" ]] || \
+			MonkeyDevDevicePassword="$DefaultDevicePassword"
+
+		#如果编译设置里面MonkeyDevDeviceIdentityFile为空的话，就从用户的profile里面去拿，否则使用默认值
+		[[ $MonkeyDevDeviceIdentityFile != "" ]] || \
+			MonkeyDevDeviceIdentityFile=`getBashProfileEnvVarValue "MonkeyDevDeviceIdentityFile"`
+		[[ $MonkeyDevDeviceIdentityFile != "" ]] || \
+			MonkeyDevDeviceIdentityFile="$DefaultDeviceIdentityFile"
+
+		#如果编译设置里面MonkeyDevDeviceFridaHost为空的话，就从用户的profile里面去拿，否则使用默认值
+		[[ $MonkeyDevDeviceFridaHost != "" ]] || \
+			MonkeyDevDeviceFridaHost=`getBashProfileEnvVarValue "MonkeyDevDeviceFridaHost"`
+		[[ $MonkeyDevDeviceFridaHost != "" ]] || \
+			MonkeyDevDeviceFridaHost="$DefaultDeviceFridaHost"
+
+		echo "${MONKEYDEV_PATH}/bin/dump.py ${MONKEYDEV_TARGET_APP} -o "${TARGET_APP_PUT_PATH}/TargetApp.ipa" --host ${MonkeyDevDeviceIP} --port ${MonkeyDevDevicePort} --user ${MonkeyDevDeviceUser} --password ${MonkeyDevDevicePassword} --key_filename ${MonkeyDevDeviceIdentityFile} --remote ${MonkeyDevDeviceFridaHost}"
+
+		PYTHONIOENCODING=utf-8 ${MONKEYDEV_PATH}/bin/dump.py ${MONKEYDEV_TARGET_APP} -o "${TARGET_APP_PUT_PATH}/TargetApp.ipa" --host ${MonkeyDevDeviceIP} --port ${MonkeyDevDevicePort} --user ${MonkeyDevDeviceUser} --password ${MonkeyDevDevicePassword} --key_filename ${MonkeyDevDeviceIdentityFile} --remote ${MonkeyDevDeviceFridaHost} || panic 1 "dump.py error"
 		TARGET_IPA_PATH=$(find "${TARGET_APP_PUT_PATH}" -type f | grep "\.ipa$" | head -n 1)
 	fi
 

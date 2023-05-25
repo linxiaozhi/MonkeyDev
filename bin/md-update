@@ -144,8 +144,9 @@ downloadGithubTarball "https://codeload.github.com/linxiaozhi/MonkeyDev/tar.gz/$
 downloadGithubTarball "https://codeload.github.com/linxiaozhi/MonkeyDev-Xcode-Templates/tar.gz/$branch" "$MonkeyDevPath/templates" "Xcode templates"
 
 #更新frida-ios-dump
-downloadGithubTarball "https://codeload.github.com/linxiaozhi/frida-ios-dump/tar.gz/3.x" "$MonkeyDevPath/frida-ios-dump" "frida-ios-dump"
+downloadGithubTarball "https://codeload.github.com/linxiaozhi/frida-ios-dump/tar.gz/$branch" "$MonkeyDevPath/frida-ios-dump" "frida-ios-dump"
 cp -fR ${MonkeyDevPath}/frida-ios-dump/dump.* ${MonkeyDevPath}/bin/
+cp -fR ${MonkeyDevPath}/frida-ios-dump/requirements.txt ${MonkeyDevPath}/bin/dump.requirements.txt
 rm -rf ${MonkeyDevPath}/frida-ios-dump || true
 chmod +x "$MonkeyDevPath/bin/dump.py"
 

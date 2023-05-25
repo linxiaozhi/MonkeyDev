@@ -113,12 +113,17 @@ done
 if [[ $userBashProfileFile != "" ]]; then
 	sed -i "" "s/^export MonkeyDevPath=.*$//g" "$userBashProfileFile"
 	sed -i "" "s/^export MonkeyDevDeviceIP=.*$//g" "$userBashProfileFile"
+	sed -i "" "s/^export MonkeyDevDevicePort=.*$//g" "$userBashProfileFile"
+	sed -i "" "s/^export MonkeyDevDeviceUser=.*$//g" "$userBashProfileFile"
+	sed -i "" "s/^export MonkeyDevDevicePassword=.*$//g" "$userBashProfileFile"
+	sed -i "" "s/^export MonkeyDevDeviceIdentityFile=.*$//g" "$userBashProfileFile"
+	sed -i "" "s/^export MonkeyDevDeviceFridaHost=.*$//g" "$userBashProfileFile"
 	sed -i "" "s/^export PATH=.*${MonkeyDevPath//\//\\/}\\/bin:.*$//g" "$userBashProfileFile"
 	sed -i "" "s/^export PATH=.*\$MonkeyDevPath\\/bin:.*$//g" "$userBashProfileFile"
 fi
 
 #获取Xcode目录
-xcodePath=`xcode-select -p`/../..
+xcodePath=${$(xcode-select -p)%/*}
 
 specificationFile=`find ${xcodePath} -name Embedded-Device.xcspec`
 

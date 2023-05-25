@@ -317,8 +317,9 @@ downloadGithubTarball "https://codeload.github.com/linxiaozhi/MonkeyDev/tar.gz/$
 downloadGithubTarball "https://codeload.github.com/linxiaozhi/MonkeyDev-Xcode-Templates/tar.gz/$branch" "$MonkeyDevPath/templates" "Xcode templates"
 
 #下载frida-ios-dump
-downloadGithubTarball "https://codeload.github.com/linxiaozhi/frida-ios-dump/tar.gz/3.x" "$MonkeyDevPath/frida-ios-dump" "frida-ios-dump"
+downloadGithubTarball "https://codeload.github.com/linxiaozhi/frida-ios-dump/tar.gz/$branc" "$MonkeyDevPath/frida-ios-dump" "frida-ios-dump"
 cp -fR ${MonkeyDevPath}/frida-ios-dump/dump.* ${MonkeyDevPath}/bin/
+cp -fR ${MonkeyDevPath}/frida-ios-dump/requirements.txt ${MonkeyDevPath}/bin/dump.requirements.txt
 rm -rf ${MonkeyDevPath}/frida-ios-dump || true
 chmod +x "$MonkeyDevPath/bin/dump.py"
 
@@ -345,11 +346,16 @@ echo "Modifying Bash personal initialization file..."
 userBashProfileFile=`determineUserBashProfileFile`
 
 addToFileIfMissing "$userBashProfileFile" "^(export)? *MonkeyDevPath=.*" "export MonkeyDevPath=$MonkeyDevPath"
-addToFileIfMissing "$userBashProfileFile" "^(export)? *MonkeyDevDeviceIP=.*" "export MonkeyDevDeviceIP="
+addToFileIfMissing "$userBashProfileFile" "^(export)? *MonkeyDevDeviceIP=.*" "export MonkeyDevDeviceIP=localhost"
+addToFileIfMissing "$userBashProfileFile" "^(export)? *MonkeyDevDevicePort=.*" "export MonkeyDevDevicePort=2222"
+addToFileIfMissing "$userBashProfileFile" "^(export)? *MonkeyDevDeviceUser=.*" "export MonkeyDevDeviceUser=root"
+addToFileIfMissing "$userBashProfileFile" "^(export)? *MonkeyDevDevicePassword=.*" "export MonkeyDevDevicePassword=alpine"
+addToFileIfMissing "$userBashProfileFile" "^(export)? *MonkeyDevDeviceIdentityFile=.*" "export MonkeyDevDeviceIdentityFile="
+addToFileIfMissing "$userBashProfileFile" "^(export)? *MonkeyDevDeviceFridaHost=.*" "export MonkeyDevDeviceFridaHost=localhost:27042"
 addToFileIfMissing "$userBashProfileFile" "^(export)? *PATH=.*(\\\$MonkeyDevPath\\/bin|${MonkeyDevPath//\//\\/}\\/bin).*" "export PATH=$MonkeyDevPath/bin:\$PATH"
 
 #获取Xcode目录
-xcodePath=`xcode-select -p`/../..
+xcodePath=${$(xcode-select -p)%/*}
 
 specificationFile=`find ${xcodePath} -name Embedded-Device.xcspec`
 
