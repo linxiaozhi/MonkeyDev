@@ -13,6 +13,9 @@ MONKEYPARSER="${MONKEYDEV_PATH}/bin/monkeyparser"
 # insert_dylib
 INSERT_DYLIB="${MONKEYDEV_PATH}/bin/insert_dylib"
 
+# optool
+OPTOOL="${MONKEYDEV_PATH}/bin/optool"
+
 # create ipa script
 CREATE_IPA="${MONKEYDEV_PATH}/bin/createIPA.command"
 
@@ -299,10 +302,19 @@ function pack(){
 	if [[ ${MONKEYDEV_INSERT_DYLIB} == "YES" ]];then
 		if [[ ${MONKEYDEV_INSERT_DYLIB_TOOLS} == "INSERT_DYLIB" ]];then
 			"$INSERT_DYLIB" --inplace --overwrite --all-yes "@executable_path/Frameworks/lib${TARGET_NAME}Dylib.dylib" "${BUILD_APP_PATH}/${APP_BINARY}"
+		elif [[ ${MONKEYDEV_INSERT_DYLIB_TOOLS} == "OPTOOL" ]]; then
+			"$OPTOOL" install -c load -p "@executable_path/Frameworks/lib${TARGET_NAME}Dylib.dylib" -t "${BUILD_APP_PATH}/${APP_BINARY}"
 		else
 			"$MONKEYPARSER" install -c load -p "@executable_path/Frameworks/lib${TARGET_NAME}Dylib.dylib" -t "${BUILD_APP_PATH}/${APP_BINARY}"
 		fi
-		"$MONKEYPARSER" unrestrict -t "${BUILD_APP_PATH}/${APP_BINARY}"
+
+		if [[ ${MONKEYDEV_INSERT_DYLIB_TOOLS} == "OPTOOL" ]];then
+			# "$OPTOOL" uninstall -p "@executable_path/Frameworks/lib${TARGET_NAME}Dylib.dylib" -t "${BUILD_APP_PATH}/${APP_BINARY}"
+			"$OPTOOL" unrestrict -w -t "${BUILD_APP_PATH}/${APP_BINARY}"
+		else
+			"$MONKEYPARSER" unrestrict -t "${BUILD_APP_PATH}/${APP_BINARY}"
+		fi
+		
 		chmod +x "${BUILD_APP_PATH}/${APP_BINARY}"
 	fi
 

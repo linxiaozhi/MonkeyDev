@@ -22,6 +22,9 @@ substrate="$MONKEYDEV_PATH/MFrameworks/libsubstitute.dylib"
 # insert_dylib
 INSERT_DYLIB="${MONKEYDEV_PATH}/bin/insert_dylib"
 
+# optool
+OPTOOL="${MONKEYDEV_PATH}/bin/optool"
+
 #exename
 TARGET_APP_PATH=$(find "$SRCROOT/$TARGET_NAME/TargetApp" -type d | grep ".app$" | head -n 1)
 
@@ -53,6 +56,8 @@ if [[ ! -f "$APP_BINARY_PATH".insert ]] && [[ ${MONKEYDEV_INSERT_DYLIB} == "YES"
 	cp -rf "$substrate" "$TARGET_APP_PATH/Contents/MacOS/"
 	if [[ ${MONKEYDEV_INSERT_DYLIB_TOOLS} == "INSERT_DYLIB" ]];then
 		"$INSERT_DYLIB" --inplace --overwrite --all-yes "@executable_path/lib$TARGET_NAME.dylib" "$APP_BINARY_PATH"
+	elif [[ ${MONKEYDEV_INSERT_DYLIB_TOOLS} == "OPTOOL" ]]; then
+		"$OPTOOL" install -c load -p "@executable_path/lib$TARGET_NAME.dylib" -t "$APP_BINARY_PATH"
 	else
 		"$monkeyparser" install -c load -p "@executable_path/lib$TARGET_NAME.dylib" -t "$APP_BINARY_PATH"
 	fi
